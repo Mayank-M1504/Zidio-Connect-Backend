@@ -5,7 +5,6 @@ import com.zidioconnect.dto.ForgotPasswordRequest;
 import com.zidioconnect.dto.LoginRequest;
 import com.zidioconnect.dto.RegisterRequest;
 import com.zidioconnect.dto.ResetPasswordRequest;
-import com.zidioconnect.model.User;
 import com.zidioconnect.service.UserService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;

@@ -2,7 +2,6 @@ package com.zidioconnect.controller;
 
 import com.cloudinary.Cloudinary;
 import com.zidioconnect.service.FileUploadService;
-import com.zidioconnect.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +19,6 @@ import java.util.Map;
 @RequestMapping("/api/test")
 public class TestController {
     private static final Logger logger = LoggerFactory.getLogger(TestController.class);
-
-    @Autowired
-    private UserService userService;
 
     @Autowired
     private Cloudinary cloudinary;
@@ -56,7 +52,7 @@ public class TestController {
             response.put("principal", authentication.getPrincipal().getClass().getSimpleName());
 
             // Log user login statistics
-            userService.logUserLoginStats(authentication.getName());
+            // userService.logUserLoginStats(authentication.getName());
         } else {
             response.put("authenticated", false);
         }
@@ -169,5 +165,16 @@ public class TestController {
         response.put("app_api_secret", apiSecret != null ? "SET" : "NOT_SET");
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/health")
+    public ResponseEntity<?> healthCheck() {
+        return ResponseEntity.ok().body("Backend is running successfully!");
+    }
+
+    @PostMapping("/test-json")
+    public ResponseEntity<?> testJson(@RequestBody Object data) {
+        logger.info("Test JSON endpoint received: {}", data);
+        return ResponseEntity.ok().body("JSON received successfully: " + data);
     }
 }

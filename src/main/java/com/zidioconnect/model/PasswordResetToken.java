@@ -14,9 +14,9 @@ public class PasswordResetToken {
 
     private String token;
 
-    @OneToOne(targetEntity = User.class, fetch = FetchType.EAGER)
-    @JoinColumn(nullable = false, name = "user_id")
-    private User user;
+    @OneToOne(targetEntity = Student.class, fetch = FetchType.EAGER)
+    @JoinColumn(nullable = false, name = "student_id")
+    private Student student;
 
     private LocalDateTime expiryDate;
 
@@ -24,5 +24,13 @@ public class PasswordResetToken {
 
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(expiryDate);
+    }
+
+    public Student getStudent() {
+        return student;
+    }
+
+    public void setStudent(Student student) {
+        this.student = student;
     }
 }

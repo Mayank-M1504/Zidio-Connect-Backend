@@ -2,292 +2,119 @@ package com.zidioconnect.service;
 
 import com.zidioconnect.dto.StudentProfileRequest;
 import com.zidioconnect.dto.StudentProfileResponse;
-import com.zidioconnect.model.StudentProfile;
-import com.zidioconnect.model.User;
+import com.zidioconnect.model.*;
 import com.zidioconnect.repository.StudentProfileRepository;
-import com.zidioconnect.repository.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class StudentProfileService {
-    private static final Logger logger = LoggerFactory.getLogger(StudentProfileService.class);
-
     @Autowired
-    private StudentProfileRepository studentProfileRepository;
+    private StudentProfileRepository profileRepo;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private FileUploadService fileUploadService;
-
-    /**
-     * Create or update student profile
-     */
-    public StudentProfileResponse createOrUpdateProfile(String userEmail, StudentProfileRequest request,
-            MultipartFile profilePicture, MultipartFile resume) throws IOException {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        if (!user.getRole().name().equals("STUDENT")) {
-            throw new IllegalArgumentException("Only students can create profiles");
-        }
-
-        Optional<StudentProfile> existingProfile = studentProfileRepository.findByUserId(user.getId());
-        StudentProfile profile;
-
-        if (existingProfile.isPresent()) {
-            profile = existingProfile.get();
-            // Delete old files if new ones are provided
-            if (profilePicture != null && !profilePicture.isEmpty()) {
-                deleteOldProfilePicture(profile.getProfilePicture());
-            }
-            if (resume != null && !resume.isEmpty()) {
-                deleteOldResume(profile.getResume());
-            }
-        } else {
-            profile = new StudentProfile();
-            profile.setUser(user);
-        }
-
-        // Upload new files if provided
-        if (profilePicture != null && !profilePicture.isEmpty()) {
-            String profilePictureUrl = fileUploadService.uploadProfilePicture(profilePicture);
-            profile.setProfilePicture(profilePictureUrl);
-        }
-
-        if (resume != null && !resume.isEmpty()) {
-            String resumeUrl = fileUploadService.uploadResume(resume);
-            profile.setResume(resumeUrl);
-        }
-
-        // Update profile data
-        updateProfileData(profile, request);
-
-        StudentProfile savedProfile = studentProfileRepository.save(profile);
-        return convertToResponse(savedProfile);
+    public StudentProfileResponse getProfileByStudentId(Long studentId) {
+        StudentProfile profile = profileRepo.findByStudentId(studentId).orElse(null);
+        return profile != null ? toResponse(profile) : null;
     }
 
-    /**
-     * Get student profile by user email
-     */
-    public StudentProfileResponse getProfile(String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    @Transactional
+    public StudentProfileResponse createOrUpdateProfile(Long studentId, StudentProfileRequest req, Student student) {
+        StudentProfile profile = profileRepo.findByStudentId(studentId).orElse(new StudentProfile());
+        profile.setStudent(student);
+        profile.setFirstName(req.firstName);
+        profile.setLastName(req.lastName);
+        profile.setEmail(req.email);
+        profile.setPhone(req.phone);
+        profile.setCollege(req.college);
+        profile.setCourse(req.course);
+        profile.setYearOfStudy(req.yearOfStudy);
+        profile.setGpa(req.gpa);
+        profile.setExpectedGraduation(req.expectedGraduation);
+        profile.setAcademicAchievements(req.academicAchievements);
+        profile.setLinkedinProfile(req.linkedinProfile);
+        profile.setGithubProfile(req.githubProfile);
+        profile.setPortfolioWebsite(req.portfolioWebsite);
+        profile.setDateOfBirth(req.dateOfBirth);
+        profile.setAddress(req.address);
+        profile.setBio(req.bio);
+        profile.setCareerGoals(req.careerGoals);
+        profile.setWorkAuthorizationStatus(req.workAuthorizationStatus);
 
-        StudentProfile profile = studentProfileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Profile not found"));
-
-        return convertToResponse(profile);
-    }
-
-    /**
-     * Get student profile by user ID (for recruiters/admins)
-     */
-    public StudentProfileResponse getProfileById(Long userId) {
-        StudentProfile profile = studentProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Profile not found"));
-
-        return convertToResponse(profile);
-    }
-
-    /**
-     * Delete student profile
-     */
-    public void deleteProfile(String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        StudentProfile profile = studentProfileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Profile not found"));
-
-        // Delete files from Cloudinary
-        deleteOldProfilePicture(profile.getProfilePicture());
-        deleteOldResume(profile.getResume());
-
-        studentProfileRepository.delete(profile);
-    }
-
-    /**
-     * Update only profile picture
-     */
-    public String updateProfilePicture(String userEmail, MultipartFile profilePicture) throws IOException {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        StudentProfile profile = studentProfileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Profile not found"));
-
-        // Delete old profile picture
-        deleteOldProfilePicture(profile.getProfilePicture());
-
-        // Upload new profile picture
-        String profilePictureUrl = fileUploadService.uploadProfilePicture(profilePicture);
-        profile.setProfilePicture(profilePictureUrl);
-        studentProfileRepository.save(profile);
-
-        return profilePictureUrl;
-    }
-
-    /**
-     * Update only resume
-     */
-    public String updateResume(String userEmail, MultipartFile resume) throws IOException {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        StudentProfile profile = studentProfileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Profile not found"));
-
-        // Delete old resume
-        deleteOldResume(profile.getResume());
-
-        // Upload new resume
-        String resumeUrl = fileUploadService.uploadResume(resume);
-        profile.setResume(resumeUrl);
-        studentProfileRepository.save(profile);
-
-        return resumeUrl;
-    }
-
-    /**
-     * Update profile data from request
-     */
-    private void updateProfileData(StudentProfile profile, StudentProfileRequest request) {
-        // Basic Information
-        if (request.getFirstName() != null)
-            profile.setFirstName(request.getFirstName());
-        if (request.getLastName() != null)
-            profile.setLastName(request.getLastName());
-        if (request.getDateOfBirth() != null)
-            profile.setDateOfBirth(request.getDateOfBirth());
-        if (request.getGender() != null)
-            profile.setGender(request.getGender());
-        if (request.getNationality() != null)
-            profile.setNationality(request.getNationality());
-        if (request.getPhone() != null)
-            profile.setPhone(request.getPhone());
-        if (request.getAddress() != null)
-            profile.setAddress(request.getAddress());
-        if (request.getBio() != null)
-            profile.setBio(request.getBio());
-
-        // Academic Information
-        if (request.getCollege() != null)
-            profile.setCollege(request.getCollege());
-        if (request.getCourse() != null)
-            profile.setCourse(request.getCourse());
-        if (request.getCurrentYear() != null)
-            profile.setCurrentYear(request.getCurrentYear());
-        if (request.getExpectedGraduationDate() != null)
-            profile.setExpectedGraduationDate(request.getExpectedGraduationDate());
-        if (request.getGpa() != null)
-            profile.setGpa(request.getGpa());
-        if (request.getMajor() != null)
-            profile.setMajor(request.getMajor());
-        if (request.getMinor() != null)
-            profile.setMinor(request.getMinor());
-
-        // Professional Information
-        if (request.getLinkedinProfile() != null)
-            profile.setLinkedinProfile(request.getLinkedinProfile());
-        if (request.getGithubProfile() != null)
-            profile.setGithubProfile(request.getGithubProfile());
-        if (request.getPortfolioUrl() != null)
-            profile.setPortfolioUrl(request.getPortfolioUrl());
-
-        // Career Information
-        if (request.getCareerGoals() != null)
-            profile.setCareerGoals(request.getCareerGoals());
-        if (request.getWorkAuthorizationStatus() != null)
-            profile.setWorkAuthorizationStatus(request.getWorkAuthorizationStatus());
-        if (request.getWillingToRelocate() != null)
-            profile.setWillingToRelocate(request.getWillingToRelocate());
-        if (request.getSalaryExpectations() != null)
-            profile.setSalaryExpectations(request.getSalaryExpectations());
-        if (request.getAvailabilityDate() != null)
-            profile.setAvailabilityDate(request.getAvailabilityDate());
-    }
-
-    /**
-     * Convert StudentProfile to StudentProfileResponse
-     */
-    private StudentProfileResponse convertToResponse(StudentProfile profile) {
-        StudentProfileResponse response = new StudentProfileResponse();
-        response.setId(profile.getId());
-        response.setUserId(profile.getUser().getId());
-        response.setUserEmail(profile.getUser().getEmail());
-
-        // Basic Information
-        response.setFirstName(profile.getFirstName());
-        response.setLastName(profile.getLastName());
-        response.setDateOfBirth(profile.getDateOfBirth());
-        response.setGender(profile.getGender());
-        response.setNationality(profile.getNationality());
-        response.setPhone(profile.getPhone());
-        response.setAddress(profile.getAddress());
-        response.setBio(profile.getBio());
-
-        // Academic Information
-        response.setCollege(profile.getCollege());
-        response.setCourse(profile.getCourse());
-        response.setCurrentYear(profile.getCurrentYear());
-        response.setExpectedGraduationDate(profile.getExpectedGraduationDate());
-        response.setGpa(profile.getGpa());
-        response.setMajor(profile.getMajor());
-        response.setMinor(profile.getMinor());
-
-        // Professional Information
-        response.setLinkedinProfile(profile.getLinkedinProfile());
-        response.setGithubProfile(profile.getGithubProfile());
-        response.setPortfolioUrl(profile.getPortfolioUrl());
-
-        // Files
-        response.setProfilePicture(profile.getProfilePicture());
-        response.setResume(profile.getResume());
-
-        // Career Information
-        response.setCareerGoals(profile.getCareerGoals());
-        response.setWorkAuthorizationStatus(profile.getWorkAuthorizationStatus());
-        response.setWillingToRelocate(profile.getWillingToRelocate());
-        response.setSalaryExpectations(profile.getSalaryExpectations());
-        response.setAvailabilityDate(profile.getAvailabilityDate());
-
-        // Timestamps
-        response.setCreatedAt(profile.getCreatedAt());
-        response.setUpdatedAt(profile.getUpdatedAt());
-
-        return response;
-    }
-
-    /**
-     * Delete old profile picture from Cloudinary
-     */
-    private void deleteOldProfilePicture(String profilePictureUrl) {
-        if (profilePictureUrl != null && !profilePictureUrl.isEmpty()) {
-            String publicId = fileUploadService.extractPublicIdFromUrl(profilePictureUrl);
-            if (publicId != null) {
-                fileUploadService.deleteFile(publicId, "image");
+        // Skills
+        profile.getSkills().clear();
+        if (req.skills != null) {
+            for (String skill : req.skills) {
+                StudentProfileSkill s = new StudentProfileSkill();
+                s.setSkill(skill);
+                s.setProfile(profile);
+                profile.getSkills().add(s);
             }
         }
-    }
-
-    /**
-     * Delete old resume from Cloudinary
-     */
-    private void deleteOldResume(String resumeUrl) {
-        if (resumeUrl != null && !resumeUrl.isEmpty()) {
-            String publicId = fileUploadService.extractPublicIdFromUrl(resumeUrl);
-            if (publicId != null) {
-                fileUploadService.deleteFile(publicId, "raw");
+        // Interests
+        profile.getInterests().clear();
+        if (req.interests != null) {
+            for (String interest : req.interests) {
+                StudentProfileInterest i = new StudentProfileInterest();
+                i.setInterest(interest);
+                i.setProfile(profile);
+                profile.getInterests().add(i);
             }
         }
+        // Job Roles
+        profile.getPreferredJobRoles().clear();
+        if (req.preferredJobRoles != null) {
+            for (String role : req.preferredJobRoles) {
+                StudentProfileJobRole r = new StudentProfileJobRole();
+                r.setJobRole(role);
+                r.setProfile(profile);
+                profile.getPreferredJobRoles().add(r);
+            }
+        }
+        // Locations
+        profile.getPreferredLocations().clear();
+        if (req.preferredLocations != null) {
+            for (String loc : req.preferredLocations) {
+                StudentProfileLocation l = new StudentProfileLocation();
+                l.setLocation(loc);
+                l.setProfile(profile);
+                profile.getPreferredLocations().add(l);
+            }
+        }
+        profile = profileRepo.save(profile);
+        return toResponse(profile);
+    }
+
+    private StudentProfileResponse toResponse(StudentProfile profile) {
+        StudentProfileResponse resp = new StudentProfileResponse();
+        resp.id = profile.getId();
+        resp.firstName = profile.getFirstName();
+        resp.lastName = profile.getLastName();
+        resp.email = profile.getEmail();
+        resp.phone = profile.getPhone();
+        resp.college = profile.getCollege();
+        resp.course = profile.getCourse();
+        resp.yearOfStudy = profile.getYearOfStudy();
+        resp.gpa = profile.getGpa();
+        resp.expectedGraduation = profile.getExpectedGraduation();
+        resp.academicAchievements = profile.getAcademicAchievements();
+        resp.linkedinProfile = profile.getLinkedinProfile();
+        resp.githubProfile = profile.getGithubProfile();
+        resp.portfolioWebsite = profile.getPortfolioWebsite();
+        resp.dateOfBirth = profile.getDateOfBirth();
+        resp.address = profile.getAddress();
+        resp.bio = profile.getBio();
+        resp.careerGoals = profile.getCareerGoals();
+        resp.workAuthorizationStatus = profile.getWorkAuthorizationStatus();
+        resp.skills = profile.getSkills().stream().map(StudentProfileSkill::getSkill).collect(Collectors.toList());
+        resp.interests = profile.getInterests().stream().map(StudentProfileInterest::getInterest)
+                .collect(Collectors.toList());
+        resp.preferredJobRoles = profile.getPreferredJobRoles().stream().map(StudentProfileJobRole::getJobRole)
+                .collect(Collectors.toList());
+        resp.preferredLocations = profile.getPreferredLocations().stream().map(StudentProfileLocation::getLocation)
+                .collect(Collectors.toList());
+        return resp;
     }
 }

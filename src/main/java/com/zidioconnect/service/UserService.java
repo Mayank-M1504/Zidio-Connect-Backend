@@ -5,11 +5,10 @@ import com.zidioconnect.dto.ForgotPasswordRequest;
 import com.zidioconnect.dto.LoginRequest;
 import com.zidioconnect.dto.RegisterRequest;
 import com.zidioconnect.dto.ResetPasswordRequest;
+import com.zidioconnect.model.Student;
 import com.zidioconnect.model.PasswordResetToken;
-import com.zidioconnect.model.User;
-import com.zidioconnect.model.UserRole;
+import com.zidioconnect.repository.StudentRepository;
 import com.zidioconnect.repository.PasswordResetTokenRepository;
-import com.zidioconnect.repository.UserRepository;
 import com.zidioconnect.security.JwtTokenProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +25,7 @@ public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     @Autowired
-    private UserRepository userRepository;
+    private StudentRepository studentRepository;
 
     @Autowired
     private PasswordResetTokenRepository tokenRepository;
@@ -37,104 +36,81 @@ public class UserService {
     @Autowired
     private JwtTokenProvider tokenProvider;
 
+    @Autowired
+    private EmailService emailService;
+
     @Transactional
     public AuthResponse registerUser(RegisterRequest request) {
         try {
-            // Check if passwords match
-            if (!request.getPassword().equals(request.getConfirmPassword())) {
-                throw new IllegalArgumentException("Passwords do not match");
+            if (studentRepository.existsByEmail(request.getEmail())) {
+                return new AuthResponse(null, "Email already registered");
             }
-
-            // Check if email already exists
-            if (userRepository.existsByEmail(request.getEmail())) {
-                throw new IllegalArgumentException("Email already registered");
-            }
-
-            // Create new user
-            User user = new User();
-            user.setEmail(request.getEmail());
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
-
-            // Split name into first and last name
+            // Create new student
+            Student student = new Student();
+            student.setEmail(request.getEmail());
+            student.setPassword(passwordEncoder.encode(request.getPassword()));
             String[] nameParts = request.getName().split(" ", 2);
-            user.setFirstName(nameParts[0]);
-            user.setLastName(nameParts.length > 1 ? nameParts[1] : "");
-
-            // Set college
-            user.setCollege(request.getCollege());
-
-            // Set role from request
-            user.setRole(request.getRole());
-
-            // Save user to database
-            userRepository.save(user);
-
-            // Generate JWT token
-            String token = tokenProvider.generateToken(user.getEmail());
-
-            return new AuthResponse(token, "User registered successfully");
+            student.setFirstName(nameParts[0]);
+            student.setLastName(nameParts.length > 1 ? nameParts[1] : "");
+            student.setCollege(request.getCollege());
+            student.setIsActive(true);
+            student.setCreatedAt(LocalDateTime.now());
+            student.setUpdatedAt(LocalDateTime.now());
+            // Save student to database
+            studentRepository.save(student);
+            String token = tokenProvider.generateToken(student.getEmail());
+            return new AuthResponse(token, "Student registered successfully");
         } catch (Exception e) {
-            logger.error("Error during user registration: ", e);
-            throw new RuntimeException("Error during user registration: " + e.getMessage(), e);
+            logger.error("Error during student registration: ", e);
+            throw new RuntimeException("Error during student registration: " + e.getMessage(), e);
         }
     }
 
     @Transactional(readOnly = true)
     public AuthResponse loginUser(LoginRequest request) {
         try {
-            // Find user by email
-            User user = userRepository.findByEmail(request.getEmail())
+            // Find student by email
+            Student student = studentRepository.findByEmail(request.getEmail())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
-
-            // Verify password
-            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            if (!passwordEncoder.matches(request.getPassword(), student.getPassword())) {
                 throw new IllegalArgumentException("Invalid email or password");
             }
-
-            // Increment login count and update last login time
-            user.setLoginCount(user.getLoginCount() + 1);
-            user.setLastLoginAt(LocalDateTime.now());
-            userRepository.save(user);
-
-            // Log the login information
-            logger.info("User login successful - Email: {}, Login Count: {}, Last Login: {}",
-                    user.getEmail(), user.getLoginCount(), user.getLastLoginAt());
-
-            // Generate JWT token
-            String token = tokenProvider.generateToken(user.getEmail());
-
+            student.setUpdatedAt(LocalDateTime.now());
+            studentRepository.save(student);
+            String token = tokenProvider.generateToken(student.getEmail());
             return new AuthResponse(token, "Login successful");
-        } catch (IllegalArgumentException e) {
-            throw e;
         } catch (Exception e) {
-            logger.error("Error during user login: ", e);
-            throw new RuntimeException("Error during user login: " + e.getMessage(), e);
+            logger.error("Error during student login: ", e);
+            throw new RuntimeException("Error during student login: " + e.getMessage(), e);
         }
     }
 
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
         try {
-            User user = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new IllegalArgumentException("No user found with this email"));
+            Student student = studentRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new IllegalArgumentException("No student found with this email"));
 
-            // Delete any existing tokens for this user
-            tokenRepository.deleteByUser_Id(user.getId());
+            // Delete any existing tokens for this student
+            tokenRepository.deleteByStudent_Id(student.getId());
 
             // Create new token
             PasswordResetToken resetToken = new PasswordResetToken();
-            resetToken.setUser(user);
+            resetToken.setStudent(student);
             resetToken.setToken(UUID.randomUUID().toString());
             resetToken.setExpiryDate(LocalDateTime.now().plusHours(24)); // Token valid for 24 hours
             tokenRepository.save(resetToken);
 
-            // In a real application, you would send an email here
-            // For now, we'll just log the reset link
+            // Send email with reset link
             String resetLink = "http://localhost:3000/reset-password?token=" + resetToken.getToken();
-            logger.info("Password reset link for user {}: {}", user.getEmail(), resetLink);
-
-            // TODO: Send email with reset link
-            // emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
+            String subject = "Password Reset Request";
+            String text = "Dear " + student.getFirstName() + ",\n\n" +
+                    "We received a request to reset your password. Please use the following link to reset your password: \n"
+                    +
+                    resetLink + "\n\n" +
+                    "If you did not request a password reset, please ignore this email.\n\n" +
+                    "Best regards,\nZidioConnect Team";
+            emailService.sendSimpleMessage(student.getEmail(), subject, text);
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
@@ -166,19 +142,19 @@ public class UserService {
                 throw new IllegalArgumentException("Reset token has already been used");
             }
 
-            // Get the user
-            User user = resetToken.getUser();
+            // Get the student
+            Student student = resetToken.getStudent();
 
             // Update password
-            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-            userRepository.save(user);
+            student.setPassword(passwordEncoder.encode(request.getNewPassword()));
+            studentRepository.save(student);
 
             // Mark token as used
             resetToken.setUsed(true);
             tokenRepository.save(resetToken);
 
             // Generate new JWT token
-            String token = tokenProvider.generateToken(user.getEmail());
+            String token = tokenProvider.generateToken(student.getEmail());
 
             return new AuthResponse(token, "Password has been reset successfully");
         } catch (IllegalArgumentException e) {
@@ -192,13 +168,12 @@ public class UserService {
     @Transactional(readOnly = true)
     public void logUserLoginStats(String email) {
         try {
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-            logger.info("User Login Statistics - Email: {}, Total Logins: {}, Last Login: {}",
-                    user.getEmail(), user.getLoginCount(), user.getLastLoginAt());
+            Student student = studentRepository.findByEmail(email)
+                    .orElseThrow(() -> new IllegalArgumentException("Student not found"));
+            logger.info("Student Login Statistics - Email: {}, Last Login: {}", student.getEmail(),
+                    student.getUpdatedAt());
         } catch (Exception e) {
-            logger.error("Error logging user stats: {}", e.getMessage());
+            logger.error("Error logging student stats: {}", e.getMessage());
         }
     }
 }

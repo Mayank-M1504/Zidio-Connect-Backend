@@ -1,6 +1,5 @@
 package com.zidioconnect.dto;
 
-import com.zidioconnect.model.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,7 +24,4 @@ public class RegisterRequest {
 
     @NotBlank(message = "Confirm password is required")
     private String confirmPassword;
-
-    @NotNull(message = "Role is required")
-    private UserRole role;
 }
