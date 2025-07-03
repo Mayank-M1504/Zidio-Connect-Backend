@@ -21,7 +21,6 @@ public class StudentProfileRequest {
     public String address;
     public String bio;
     public String careerGoals;
-    public String workAuthorizationStatus;
     public List<String> skills;
     public List<String> interests;
     public List<String> preferredJobRoles;

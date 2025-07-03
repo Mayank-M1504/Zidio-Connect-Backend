@@ -45,8 +45,6 @@ public class StudentProfile {
     @Column(columnDefinition = "TEXT")
     private String careerGoals;
 
-    private String workAuthorizationStatus;
-
     // Collections
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StudentProfileSkill> skills = new ArrayList<>();
@@ -214,14 +212,6 @@ public class StudentProfile {
 
     public void setCareerGoals(String careerGoals) {
         this.careerGoals = careerGoals;
-    }
-
-    public String getWorkAuthorizationStatus() {
-        return workAuthorizationStatus;
-    }
-
-    public void setWorkAuthorizationStatus(String workAuthorizationStatus) {
-        this.workAuthorizationStatus = workAuthorizationStatus;
     }
 
     public List<StudentProfileSkill> getSkills() {

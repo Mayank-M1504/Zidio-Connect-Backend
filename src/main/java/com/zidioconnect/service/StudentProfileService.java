@@ -20,6 +20,11 @@ public class StudentProfileService {
         return profile != null ? toResponse(profile) : null;
     }
 
+    public StudentProfileResponse getProfileByEmail(String email) {
+        StudentProfile profile = profileRepo.findByEmail(email).orElse(null);
+        return profile != null ? toResponse(profile) : null;
+    }
+
     @Transactional
     public StudentProfileResponse createOrUpdateProfile(Long studentId, StudentProfileRequest req, Student student) {
         StudentProfile profile = profileRepo.findByStudentId(studentId).orElse(new StudentProfile());
@@ -41,7 +46,6 @@ public class StudentProfileService {
         profile.setAddress(req.address);
         profile.setBio(req.bio);
         profile.setCareerGoals(req.careerGoals);
-        profile.setWorkAuthorizationStatus(req.workAuthorizationStatus);
 
         // Skills
         profile.getSkills().clear();
@@ -107,7 +111,6 @@ public class StudentProfileService {
         resp.address = profile.getAddress();
         resp.bio = profile.getBio();
         resp.careerGoals = profile.getCareerGoals();
-        resp.workAuthorizationStatus = profile.getWorkAuthorizationStatus();
         resp.skills = profile.getSkills().stream().map(StudentProfileSkill::getSkill).collect(Collectors.toList());
         resp.interests = profile.getInterests().stream().map(StudentProfileInterest::getInterest)
                 .collect(Collectors.toList());
