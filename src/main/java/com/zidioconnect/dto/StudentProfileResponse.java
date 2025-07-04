@@ -2,6 +2,7 @@ package com.zidioconnect.dto;
 
 import java.util.Date;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class StudentProfileResponse {
     public Long id;
@@ -13,11 +14,11 @@ public class StudentProfileResponse {
     public String course;
     public String yearOfStudy;
     public String gpa;
-    public Date expectedGraduation;
     public String academicAchievements;
     public String linkedinProfile;
     public String githubProfile;
     public String portfolioWebsite;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     public Date dateOfBirth;
     public String address;
     public String bio;

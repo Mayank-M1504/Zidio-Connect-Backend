@@ -37,7 +37,6 @@ public class StudentProfileService {
         profile.setCourse(req.course);
         profile.setYearOfStudy(req.yearOfStudy);
         profile.setGpa(req.gpa);
-        profile.setExpectedGraduation(req.expectedGraduation);
         profile.setAcademicAchievements(req.academicAchievements);
         profile.setLinkedinProfile(req.linkedinProfile);
         profile.setGithubProfile(req.githubProfile);
@@ -102,7 +101,6 @@ public class StudentProfileService {
         resp.course = profile.getCourse();
         resp.yearOfStudy = profile.getYearOfStudy();
         resp.gpa = profile.getGpa();
-        resp.expectedGraduation = profile.getExpectedGraduation();
         resp.academicAchievements = profile.getAcademicAchievements();
         resp.linkedinProfile = profile.getLinkedinProfile();
         resp.githubProfile = profile.getGithubProfile();
