@@ -28,7 +28,6 @@ public class StudentProfile {
     private String course;
     private String yearOfStudy;
     private String gpa;
-    private Date expectedGraduation;
 
     @Column(columnDefinition = "TEXT")
     private String academicAchievements;
@@ -57,9 +56,6 @@ public class StudentProfile {
 
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StudentProfileLocation> preferredLocations = new ArrayList<>();
-
-    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<StudentDocument> documents = new ArrayList<>();
 
     // Getters and setters
     public Long getId() {
@@ -140,14 +136,6 @@ public class StudentProfile {
 
     public void setGpa(String gpa) {
         this.gpa = gpa;
-    }
-
-    public Date getExpectedGraduation() {
-        return expectedGraduation;
-    }
-
-    public void setExpectedGraduation(Date expectedGraduation) {
-        this.expectedGraduation = expectedGraduation;
     }
 
     public String getAcademicAchievements() {
@@ -244,13 +232,5 @@ public class StudentProfile {
 
     public void setPreferredLocations(List<StudentProfileLocation> preferredLocations) {
         this.preferredLocations = preferredLocations;
-    }
-
-    public List<StudentDocument> getDocuments() {
-        return documents;
-    }
-
-    public void setDocuments(List<StudentDocument> documents) {
-        this.documents = documents;
     }
 }

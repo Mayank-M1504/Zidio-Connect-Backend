@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity
-@Table(name = "student_documents")
-public class StudentDocument {
+@Table(name = "student_certificates")
+public class StudentCertificate {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -15,10 +15,7 @@ public class StudentDocument {
     private StudentProfile profile;
 
     @Column(nullable = false)
-    private String type; // resume, marksheet, identity_proof
-
-    @Column(nullable = false)
-    private String name;
+    private String certificateName;
 
     @Column(nullable = false)
     private String url;
@@ -40,6 +37,12 @@ public class StudentDocument {
 
     private String remarks; // For admin remarks
 
+    private String issuingOrganization;
+
+    private Date issueDate;
+
+    private Date expiryDate;
+
     // Getters and setters
     public Long getId() {
         return id;
@@ -57,20 +60,12 @@ public class StudentDocument {
         this.profile = profile;
     }
 
-    public String getType() {
-        return type;
+    public String getCertificateName() {
+        return certificateName;
     }
 
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
+    public void setCertificateName(String certificateName) {
+        this.certificateName = certificateName;
     }
 
     public String getUrl() {
@@ -127,5 +122,29 @@ public class StudentDocument {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+    public String getIssuingOrganization() {
+        return issuingOrganization;
+    }
+
+    public void setIssuingOrganization(String issuingOrganization) {
+        this.issuingOrganization = issuingOrganization;
+    }
+
+    public Date getIssueDate() {
+        return issueDate;
+    }
+
+    public void setIssueDate(Date issueDate) {
+        this.issueDate = issueDate;
+    }
+
+    public Date getExpiryDate() {
+        return expiryDate;
+    }
+
+    public void setExpiryDate(Date expiryDate) {
+        this.expiryDate = expiryDate;
     }
 }

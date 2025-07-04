@@ -113,7 +113,7 @@ public class TestController {
 
             // Test file validation
             boolean isValidImage = fileUploadService.isValidProfilePicture(file);
-            boolean isValidPdf = fileUploadService.isValidResume(file);
+            boolean isValidPdf = fileUploadService.isValidDocument(file, "resume");
 
             response.put("isValidImage", isValidImage);
             response.put("isValidPdf", isValidPdf);
@@ -125,7 +125,7 @@ public class TestController {
                 response.put("uploadType", "profile_picture");
             } else if (isValidPdf) {
                 // Test resume upload
-                String pdfUrl = fileUploadService.uploadResume(file);
+                String pdfUrl = fileUploadService.uploadDocument(file, "resume");
                 response.put("uploadedPdfUrl", pdfUrl);
                 response.put("uploadType", "resume");
             } else {

@@ -2,6 +2,7 @@ package com.zidioconnect.dto;
 
 import java.util.Date;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class StudentProfileRequest {
     public String firstName;
@@ -12,7 +13,6 @@ public class StudentProfileRequest {
     public String course;
     public String yearOfStudy;
     public String gpa;
-    public Date expectedGraduation;
     public String academicAchievements;
     public String linkedinProfile;
     public String githubProfile;
