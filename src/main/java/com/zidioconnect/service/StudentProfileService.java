@@ -105,6 +105,7 @@ public class StudentProfileService {
         resp.linkedinProfile = profile.getLinkedinProfile();
         resp.githubProfile = profile.getGithubProfile();
         resp.portfolioWebsite = profile.getPortfolioWebsite();
+        resp.profilePicture = profile.getStudent().getProfilePicture();
         resp.dateOfBirth = profile.getDateOfBirth();
         resp.address = profile.getAddress();
         resp.bio = profile.getBio();

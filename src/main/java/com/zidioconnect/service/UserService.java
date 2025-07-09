@@ -7,8 +7,10 @@ import com.zidioconnect.dto.RegisterRequest;
 import com.zidioconnect.dto.ResetPasswordRequest;
 import com.zidioconnect.model.Student;
 import com.zidioconnect.model.PasswordResetToken;
+import com.zidioconnect.model.Recruiter;
 import com.zidioconnect.repository.StudentRepository;
 import com.zidioconnect.repository.PasswordResetTokenRepository;
+import com.zidioconnect.repository.RecruiterRepository;
 import com.zidioconnect.security.JwtTokenProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,30 +41,58 @@ public class UserService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private RecruiterRepository recruiterRepository;
+
     @Transactional
     public AuthResponse registerUser(RegisterRequest request) {
         try {
-            if (studentRepository.existsByEmail(request.getEmail())) {
-                return new AuthResponse(null, "Email already registered");
+            if (request.getRole() != null && request.getRole().equalsIgnoreCase("RECRUITER")) {
+                // Recruiter registration
+                if (recruiterRepository.existsByEmail(request.getEmail())) {
+                    return new AuthResponse(null, "Email already registered");
+                }
+                if (request.getCompany() == null || request.getCompany().isEmpty()) {
+                    return new AuthResponse(null, "Company is required for recruiter registration");
+                }
+                Recruiter recruiter = new Recruiter();
+                recruiter.setEmail(request.getEmail());
+                recruiter.setPassword(passwordEncoder.encode(request.getPassword()));
+                String[] nameParts = request.getName().split(" ", 2);
+                recruiter.setFirstName(nameParts[0]);
+                recruiter.setLastName(nameParts.length > 1 ? nameParts[1] : "");
+                recruiter.setCompany(request.getCompany());
+                recruiter.setIsActive(true);
+                recruiter.setCreatedAt(LocalDateTime.now());
+                recruiter.setUpdatedAt(LocalDateTime.now());
+                recruiterRepository.save(recruiter);
+                String token = tokenProvider.generateToken(recruiter.getEmail());
+                return new AuthResponse(token, "Recruiter registered successfully");
+            } else {
+                // Student registration (default)
+                if (studentRepository.existsByEmail(request.getEmail())) {
+                    return new AuthResponse(null, "Email already registered");
+                }
+                if (request.getCollege() == null || request.getCollege().isEmpty()) {
+                    return new AuthResponse(null, "College is required for student registration");
+                }
+                Student student = new Student();
+                student.setEmail(request.getEmail());
+                student.setPassword(passwordEncoder.encode(request.getPassword()));
+                String[] nameParts = request.getName().split(" ", 2);
+                student.setFirstName(nameParts[0]);
+                student.setLastName(nameParts.length > 1 ? nameParts[1] : "");
+                student.setCollege(request.getCollege());
+                student.setIsActive(true);
+                student.setCreatedAt(LocalDateTime.now());
+                student.setUpdatedAt(LocalDateTime.now());
+                studentRepository.save(student);
+                String token = tokenProvider.generateToken(student.getEmail());
+                return new AuthResponse(token, "Student registered successfully");
             }
-            // Create new student
-            Student student = new Student();
-            student.setEmail(request.getEmail());
-            student.setPassword(passwordEncoder.encode(request.getPassword()));
-            String[] nameParts = request.getName().split(" ", 2);
-            student.setFirstName(nameParts[0]);
-            student.setLastName(nameParts.length > 1 ? nameParts[1] : "");
-            student.setCollege(request.getCollege());
-            student.setIsActive(true);
-            student.setCreatedAt(LocalDateTime.now());
-            student.setUpdatedAt(LocalDateTime.now());
-            // Save student to database
-            studentRepository.save(student);
-            String token = tokenProvider.generateToken(student.getEmail());
-            return new AuthResponse(token, "Student registered successfully");
         } catch (Exception e) {
-            logger.error("Error during student registration: ", e);
-            throw new RuntimeException("Error during student registration: " + e.getMessage(), e);
+            logger.error("Error during registration: ", e);
+            throw new RuntimeException("Error during registration: " + e.getMessage(), e);
         }
     }
 
@@ -82,6 +112,24 @@ public class UserService {
         } catch (Exception e) {
             logger.error("Error during student login: ", e);
             throw new RuntimeException("Error during student login: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public AuthResponse loginRecruiter(LoginRequest request) {
+        try {
+            Recruiter recruiter = recruiterRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+            if (!passwordEncoder.matches(request.getPassword(), recruiter.getPassword())) {
+                throw new IllegalArgumentException("Invalid email or password");
+            }
+            recruiter.setUpdatedAt(java.time.LocalDateTime.now());
+            recruiterRepository.save(recruiter);
+            String token = tokenProvider.generateToken(recruiter.getEmail());
+            return new AuthResponse(token, "Login successful");
+        } catch (Exception e) {
+            logger.error("Error during recruiter login: ", e);
+            throw new RuntimeException("Error during recruiter login: " + e.getMessage(), e);
         }
     }
 

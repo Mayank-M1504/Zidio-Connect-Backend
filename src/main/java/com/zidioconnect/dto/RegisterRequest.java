@@ -15,8 +15,15 @@ public class RegisterRequest {
     @Email(message = "Invalid email format")
     private String email;
 
-    @NotBlank(message = "College is required")
+    // Role: 'STUDENT' or 'RECRUITER'
+    @NotBlank(message = "Role is required")
+    private String role;
+
+    // For students only
     private String college;
+
+    // For recruiters only
+    private String company;
 
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must be at least 6 characters long")

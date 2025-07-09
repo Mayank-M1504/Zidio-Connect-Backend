@@ -18,6 +18,7 @@ public class StudentProfileResponse {
     public String linkedinProfile;
     public String githubProfile;
     public String portfolioWebsite;
+    public String profilePicture;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     public Date dateOfBirth;
     public String address;
