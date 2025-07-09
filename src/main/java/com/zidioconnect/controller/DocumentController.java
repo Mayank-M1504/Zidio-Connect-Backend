@@ -299,4 +299,163 @@ public class DocumentController {
         documentService.saveCertificate(cert);
         return ResponseEntity.ok(Map.of("message", "Status updated", "certificate", cert));
     }
+
+    // Student endpoint to get documents without lazy loading issues
+    @GetMapping("/student/list")
+    public ResponseEntity<?> getStudentDocuments(Authentication authentication) {
+        String email = authentication.getName();
+        StudentProfile profile = profileRepository.findByEmail(email).orElse(null);
+        if (profile == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Profile not found"));
+        }
+        try {
+            System.out.println("=== GETTING STUDENT DOCUMENTS ===");
+            System.out.println("Student email: " + email);
+            System.out.println("Profile ID: " + profile.getId());
+
+            // Get documents for this student
+            List<StudentDocument> studentDocs = documentService.getDocumentsByProfileId(profile.getId());
+            List<StudentCertificate> studentCerts = documentService.getCertificatesByProfileId(profile.getId());
+
+            System.out.println("Found " + studentDocs.size() + " documents for student");
+            System.out.println("Found " + studentCerts.size() + " certificates for student");
+
+            // Create a simple response without lazy loading issues
+            List<Map<String, Object>> docList = new ArrayList<>();
+            for (StudentDocument doc : studentDocs) {
+                Map<String, Object> docMap = new HashMap<>();
+                docMap.put("id", doc.getId());
+                docMap.put("fileName", doc.getFileName());
+                docMap.put("type", doc.getType());
+                docMap.put("status", doc.getStatus());
+                docMap.put("uploadedAt", doc.getUploadedAt());
+                docMap.put("fileSize", doc.getFileSize());
+                docMap.put("contentType", doc.getContentType());
+                docMap.put("url", doc.getUrl());
+                docMap.put("name", doc.getName());
+
+                // Safely get profile info
+                try {
+                    StudentProfile docProfile = doc.getProfile();
+                    if (docProfile != null) {
+                        docMap.put("profileEmail", docProfile.getEmail());
+                        docMap.put("profileId", docProfile.getId());
+                    } else {
+                        docMap.put("profileEmail", "null");
+                        docMap.put("profileId", "null");
+                    }
+                } catch (Exception e) {
+                    docMap.put("profileEmail", "error: " + e.getMessage());
+                    docMap.put("profileId", "error");
+                }
+
+                docList.add(docMap);
+            }
+
+            List<Map<String, Object>> certList = new ArrayList<>();
+            for (StudentCertificate cert : studentCerts) {
+                Map<String, Object> certMap = new HashMap<>();
+                certMap.put("id", cert.getId());
+                certMap.put("fileName", cert.getFileName());
+                certMap.put("certificateName", cert.getCertificateName());
+                certMap.put("status", cert.getStatus());
+                certMap.put("uploadedAt", cert.getUploadedAt());
+                certMap.put("fileSize", cert.getFileSize());
+                certMap.put("contentType", cert.getContentType());
+                certMap.put("url", cert.getUrl());
+
+                // Safely get profile info
+                try {
+                    StudentProfile certProfile = cert.getProfile();
+                    if (certProfile != null) {
+                        certMap.put("profileEmail", certProfile.getEmail());
+                        certMap.put("profileId", certProfile.getId());
+                    } else {
+                        certMap.put("profileEmail", "null");
+                        certMap.put("profileId", "null");
+                    }
+                } catch (Exception e) {
+                    certMap.put("profileEmail", "error: " + e.getMessage());
+                    certMap.put("profileId", "error");
+                }
+
+                certList.add(certMap);
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("documentCount", docList.size());
+            response.put("certificateCount", certList.size());
+            response.put("documents", docList);
+            response.put("certificates", certList);
+
+            System.out.println("Returning " + docList.size() + " documents and " + certList.size() + " certificates");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.out.println("Error in student documents endpoint: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Test endpoint to check current user and database state
+    @GetMapping("/student/test")
+    public ResponseEntity<?> testStudentAccess(Authentication authentication) {
+        try {
+            String email = authentication.getName();
+            System.out.println("=== TESTING STUDENT ACCESS ===");
+            System.out.println("Current user email: " + email);
+
+            StudentProfile profile = profileRepository.findByEmail(email).orElse(null);
+            System.out.println("Profile found: " + (profile != null));
+            if (profile != null) {
+                System.out.println("Profile ID: " + profile.getId());
+            }
+
+            // Get all documents and certificates
+            List<StudentDocument> allDocs = documentService.getAllDocuments();
+            List<StudentCertificate> allCerts = documentService.getAllCertificates();
+
+            System.out.println("Total documents in DB: " + allDocs.size());
+            System.out.println("Total certificates in DB: " + allCerts.size());
+
+            // Count documents for this user
+            long userDocCount = allDocs.stream()
+                    .filter(doc -> {
+                        try {
+                            return doc.getProfile() != null && doc.getProfile().getEmail().equals(email);
+                        } catch (Exception e) {
+                            return false;
+                        }
+                    })
+                    .count();
+
+            long userCertCount = allCerts.stream()
+                    .filter(cert -> {
+                        try {
+                            return cert.getProfile() != null && cert.getProfile().getEmail().equals(email);
+                        } catch (Exception e) {
+                            return false;
+                        }
+                    })
+                    .count();
+
+            System.out.println("Documents for user " + email + ": " + userDocCount);
+            System.out.println("Certificates for user " + email + ": " + userCertCount);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("currentUser", email);
+            response.put("profileFound", profile != null);
+            response.put("profileId", profile != null ? profile.getId() : null);
+            response.put("totalDocumentsInDB", allDocs.size());
+            response.put("totalCertificatesInDB", allCerts.size());
+            response.put("userDocuments", userDocCount);
+            response.put("userCertificates", userCertCount);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.out.println("Error in test endpoint: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

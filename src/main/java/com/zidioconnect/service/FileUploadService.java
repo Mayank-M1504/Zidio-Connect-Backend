@@ -85,7 +85,7 @@ public class FileUploadService {
         logger.info("File size: {} bytes", file != null ? file.getSize() : "N/A");
         logger.info("Content type: {}", file != null ? file.getContentType() : "null");
         logger.info("Document type: {}", type);
-        
+
         if (file == null || file.isEmpty()) {
             logger.error("File is null or empty");
             throw new IllegalArgumentException("File cannot be null or empty");
@@ -94,7 +94,7 @@ public class FileUploadService {
         // Validate file type based on document type
         String contentType = file.getContentType();
         logger.info("Validating content type: {} for type: {}", contentType, type);
-        
+
         if (contentType == null) {
             logger.error("Content type is null");
             throw new IllegalArgumentException("Content type cannot be null");
@@ -129,7 +129,8 @@ public class FileUploadService {
                     uploadOptions = ObjectUtils.asMap(
                             "folder", "zidioconnect/documents/resumes",
                             "resource_type", "raw",
-                            "format", "pdf");
+                            "format", "pdf",
+                            "flags", "attachment:false");
                     break;
 
                 case "marksheet":
@@ -140,7 +141,9 @@ public class FileUploadService {
                     uploadOptions = ObjectUtils.asMap(
                             "folder", "zidioconnect/documents/marksheets",
                             "resource_type", contentType.equals("application/pdf") ? "raw" : "image",
-                            "format", contentType.equals("application/pdf") ? "pdf" : "auto");
+                            "format", contentType.equals("application/pdf") ? "pdf" : "auto",
+                            contentType.equals("application/pdf") ? "flags" : "",
+                            contentType.equals("application/pdf") ? "attachment:false" : "");
                     break;
 
                 case "identity_proof":
@@ -151,7 +154,9 @@ public class FileUploadService {
                     uploadOptions = ObjectUtils.asMap(
                             "folder", "zidioconnect/documents/identity-proofs",
                             "resource_type", contentType.equals("application/pdf") ? "raw" : "image",
-                            "format", contentType.equals("application/pdf") ? "pdf" : "auto");
+                            "format", contentType.equals("application/pdf") ? "pdf" : "auto",
+                            contentType.equals("application/pdf") ? "flags" : "",
+                            contentType.equals("application/pdf") ? "attachment:false" : "");
                     break;
 
                 case "certificate":
@@ -162,7 +167,51 @@ public class FileUploadService {
                     uploadOptions = ObjectUtils.asMap(
                             "folder", "zidioconnect/documents/certificates",
                             "resource_type", contentType.equals("application/pdf") ? "raw" : "image",
-                            "format", contentType.equals("application/pdf") ? "pdf" : "auto");
+                            "format", contentType.equals("application/pdf") ? "pdf" : "auto",
+                            contentType.equals("application/pdf") ? "flags" : "",
+                            contentType.equals("application/pdf") ? "attachment:false" : "");
+                    break;
+
+                // --- Recruiter document types ---
+                case "registration":
+                    if (!contentType.equals("application/pdf")) {
+                        throw new IllegalArgumentException("Registration document must be a PDF file");
+                    }
+                    uploadOptions = ObjectUtils.asMap(
+                            "folder", "zidioconnect/recruiter-documents/registration",
+                            "resource_type", "raw",
+                            "format", "pdf",
+                            "flags", "attachment:false");
+                    break;
+                case "gst":
+                    if (!contentType.equals("application/pdf")) {
+                        throw new IllegalArgumentException("GST document must be a PDF file");
+                    }
+                    uploadOptions = ObjectUtils.asMap(
+                            "folder", "zidioconnect/recruiter-documents/gst",
+                            "resource_type", "raw",
+                            "format", "pdf",
+                            "flags", "attachment:false");
+                    break;
+                case "pan":
+                    if (!contentType.equals("application/pdf")) {
+                        throw new IllegalArgumentException("PAN document must be a PDF file");
+                    }
+                    uploadOptions = ObjectUtils.asMap(
+                            "folder", "zidioconnect/recruiter-documents/pan",
+                            "resource_type", "raw",
+                            "format", "pdf",
+                            "flags", "attachment:false");
+                    break;
+                case "business":
+                    if (!contentType.equals("application/pdf")) {
+                        throw new IllegalArgumentException("Business license must be a PDF file");
+                    }
+                    uploadOptions = ObjectUtils.asMap(
+                            "folder", "zidioconnect/recruiter-documents/business",
+                            "resource_type", "raw",
+                            "format", "pdf",
+                            "flags", "attachment:false");
                     break;
 
                 default:

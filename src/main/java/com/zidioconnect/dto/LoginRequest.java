@@ -12,4 +12,7 @@ public class LoginRequest {
 
     @NotBlank(message = "Password is required")
     private String password;
+
+    // Add role field
+    private String role; // 'STUDENT' or 'RECRUITER'
 }

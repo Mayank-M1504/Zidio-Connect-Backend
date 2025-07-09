@@ -43,7 +43,12 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {
-            AuthResponse response = userService.loginUser(request);
+            AuthResponse response;
+            if ("RECRUITER".equalsIgnoreCase(request.getRole())) {
+                response = userService.loginRecruiter(request);
+            } else {
+                response = userService.loginUser(request);
+            }
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             logger.error("Validation error during login: ", e);

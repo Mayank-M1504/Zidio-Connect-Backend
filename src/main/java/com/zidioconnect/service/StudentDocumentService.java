@@ -3,8 +3,10 @@ package com.zidioconnect.service;
 import com.zidioconnect.model.StudentDocument;
 import com.zidioconnect.model.StudentCertificate;
 import com.zidioconnect.model.StudentProfile;
+import com.zidioconnect.model.Student;
 import com.zidioconnect.repository.StudentDocumentRepository;
 import com.zidioconnect.repository.StudentCertificateRepository;
+import com.zidioconnect.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,6 +21,9 @@ public class StudentDocumentService {
 
     @Autowired
     private StudentCertificateRepository certificateRepository;
+
+    @Autowired
+    private StudentRepository studentRepository;
 
     @Autowired
     private FileUploadService fileUploadService;
@@ -52,6 +57,15 @@ public class StudentDocumentService {
         StudentDocument savedDoc = documentRepository.save(doc);
         System.out.println("Document saved with ID: " + savedDoc.getId());
         System.out.println("Total documents in DB: " + documentRepository.count());
+
+        // If uploading a profile picture, update the Student entity
+        if ("profile_picture".equals(type)) {
+            Student student = profile.getStudent();
+            if (student != null) {
+                student.setProfilePicture(url);
+                studentRepository.save(student);
+            }
+        }
 
         return savedDoc;
     }
