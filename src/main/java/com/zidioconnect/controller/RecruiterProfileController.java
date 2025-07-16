@@ -75,6 +75,24 @@ public class RecruiterProfileController {
         }
     }
 
+    @PostMapping("/upload-logo")
+    public ResponseEntity<?> uploadCompanyLogo(Authentication authentication,
+            @RequestParam("file") MultipartFile file) {
+        String email = authentication.getName();
+        Recruiter recruiter = recruiterRepository.findByEmail(email).orElse(null);
+        if (recruiter == null) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Recruiter not found"));
+        }
+        try {
+            String url = fileUploadService.uploadProfilePicture(file); // Reuse profile picture upload logic
+            recruiter.setCompanyLogo(url);
+            recruiterRepository.save(recruiter);
+            return ResponseEntity.ok(java.util.Map.of("companyLogoUrl", url));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Failed to upload company logo: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/documents")
     public ResponseEntity<?> getRecruiterDocuments(Authentication authentication) {
         String email = authentication.getName();

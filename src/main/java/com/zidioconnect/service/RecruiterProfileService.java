@@ -4,6 +4,8 @@ import com.zidioconnect.dto.RecruiterProfileRequest;
 import com.zidioconnect.dto.RecruiterProfileResponse;
 import com.zidioconnect.model.RecruiterProfile;
 import com.zidioconnect.repository.RecruiterProfileRepository;
+import com.zidioconnect.model.Recruiter;
+import com.zidioconnect.repository.RecruiterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecruiterProfileService {
     @Autowired
     private RecruiterProfileRepository profileRepo;
+    @Autowired
+    private RecruiterRepository recruiterRepository;
 
     public RecruiterProfileResponse getProfileByEmail(String email) {
         RecruiterProfile profile = profileRepo.findByEmail(email).orElse(null);
@@ -50,6 +54,9 @@ public class RecruiterProfileService {
         resp.recruiterRole = profile.getRecruiterRole();
         resp.linkedinProfile = profile.getLinkedinProfile();
         resp.stinNumber = profile.getStinNumber();
+        // Fetch companyLogo from Recruiter entity
+        Recruiter recruiter = recruiterRepository.findByEmail(profile.getEmail()).orElse(null);
+        resp.companyLogo = recruiter != null ? recruiter.getCompanyLogo() : null;
         return resp;
     }
 }

@@ -21,6 +21,7 @@ public class Recruiter {
     private String phoneNumber;
     private String profilePicture;
     private LocalDateTime updatedAt;
+    private String companyLogo;
 
     // Getters and setters
     public Long getId() {
@@ -109,5 +110,13 @@ public class Recruiter {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getCompanyLogo() {
+        return companyLogo;
+    }
+
+    public void setCompanyLogo(String companyLogo) {
+        this.companyLogo = companyLogo;
     }
 }

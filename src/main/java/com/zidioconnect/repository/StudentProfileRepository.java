@@ -8,4 +8,6 @@ public interface StudentProfileRepository extends JpaRepository<StudentProfile, 
     Optional<StudentProfile> findByStudentId(Long studentId);
 
     Optional<StudentProfile> findByEmail(String email);
+
+    Optional<StudentProfile> findByStudent_Email(String email);
 }

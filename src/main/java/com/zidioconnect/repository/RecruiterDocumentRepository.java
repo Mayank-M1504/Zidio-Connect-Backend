@@ -7,4 +7,8 @@ import java.util.List;
 
 public interface RecruiterDocumentRepository extends JpaRepository<RecruiterDocument, Long> {
     List<RecruiterDocument> findByRecruiter(Recruiter recruiter);
+
+    List<RecruiterDocument> findByRecruiterAndType(Recruiter recruiter, String type);
+
+    List<RecruiterDocument> findByRecruiterAndTypeAndStatus(Recruiter recruiter, String type, String status);
 }
