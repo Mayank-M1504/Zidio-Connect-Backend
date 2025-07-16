@@ -22,4 +22,13 @@ public class RecruiterProfileResponse {
     public String recruiterRole;
     public String linkedinProfile;
     public String stinNumber;
+    public String companyLogo;
+
+    public String getCompanyLogo() {
+        return companyLogo;
+    }
+
+    public void setCompanyLogo(String companyLogo) {
+        this.companyLogo = companyLogo;
+    }
 }
