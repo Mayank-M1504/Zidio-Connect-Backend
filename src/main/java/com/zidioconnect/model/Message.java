@@ -10,68 +10,49 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "application_id", nullable = false)
-    private Application application;
+    @Column(nullable = false)
+    private String senderEmail;
 
     @Column(nullable = false)
-    private Long senderId;
+    private String senderRole; // STUDENT or RECRUITER
 
     @Column(nullable = false)
-    private String senderRole; // "RECRUITER" or "STUDENT"
+    private String receiverEmail;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false)
+    private String receiverRole; // STUDENT or RECRUITER
+
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
     @Column(nullable = false)
-    private LocalDateTime timestamp = LocalDateTime.now();
+    private LocalDateTime sentAt = LocalDateTime.now();
+
+    // Optionally, link to an application or job
+    private Long applicationId;
 
     // Getters and setters
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getSenderEmail() { return senderEmail; }
+    public void setSenderEmail(String senderEmail) { this.senderEmail = senderEmail; }
 
-    public Application getApplication() {
-        return application;
-    }
+    public String getSenderRole() { return senderRole; }
+    public void setSenderRole(String senderRole) { this.senderRole = senderRole; }
 
-    public void setApplication(Application application) {
-        this.application = application;
-    }
+    public String getReceiverEmail() { return receiverEmail; }
+    public void setReceiverEmail(String receiverEmail) { this.receiverEmail = receiverEmail; }
 
-    public Long getSenderId() {
-        return senderId;
-    }
+    public String getReceiverRole() { return receiverRole; }
+    public void setReceiverRole(String receiverRole) { this.receiverRole = receiverRole; }
 
-    public void setSenderId(Long senderId) {
-        this.senderId = senderId;
-    }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
 
-    public String getSenderRole() {
-        return senderRole;
-    }
+    public LocalDateTime getSentAt() { return sentAt; }
+    public void setSentAt(LocalDateTime sentAt) { this.sentAt = sentAt; }
 
-    public void setSenderRole(String senderRole) {
-        this.senderRole = senderRole;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public LocalDateTime getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
+    public Long getApplicationId() { return applicationId; }
+    public void setApplicationId(Long applicationId) { this.applicationId = applicationId; }
 }

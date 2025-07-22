@@ -25,6 +25,37 @@ public class RecruiterJobController {
     @Autowired
     private RecruiterDocumentRepository recruiterDocumentRepository;
 
+    // Add DTO for job listing with companyLogo and companyName
+    static class JobWithCompanyDTO {
+        public Long id;
+        public String title;
+        public String department;
+        public String location;
+        public String jobType;
+        public String stipendSalary;
+        public String duration;
+        public String description;
+        public String requirements;
+        public String adminApprovalStatus;
+        public String companyLogo;
+        public String companyName;
+
+        public JobWithCompanyDTO(RecruiterJob job) {
+            this.id = job.getId();
+            this.title = job.getTitle();
+            this.department = job.getDepartment();
+            this.location = job.getLocation();
+            this.jobType = job.getJobType();
+            this.stipendSalary = job.getStipendSalary();
+            this.duration = job.getDuration();
+            this.description = job.getDescription();
+            this.requirements = job.getRequirements();
+            this.adminApprovalStatus = job.getAdminApprovalStatus();
+            this.companyLogo = job.getRecruiter() != null ? job.getRecruiter().getCompanyLogo() : null;
+            this.companyName = job.getRecruiter() != null ? job.getRecruiter().getCompany() : null;
+        }
+    }
+
     @PostMapping
     public ResponseEntity<?> postJob(Authentication authentication, @RequestBody RecruiterJob job) {
         String email = authentication.getName();
@@ -68,6 +99,14 @@ public class RecruiterJobController {
     public ResponseEntity<?> getApprovedJobs() {
         List<RecruiterJob> jobs = jobService.getApprovedJobs();
         return ResponseEntity.ok(jobs);
+    }
+
+    // In the job listing endpoint, map to JobWithCompanyDTO
+    @GetMapping("/api/jobs")
+    public ResponseEntity<?> getAllJobsWithCompany() {
+        List<RecruiterJob> jobs = jobService.getAllJobs();
+        List<JobWithCompanyDTO> jobsWithCompany = jobs.stream().map(JobWithCompanyDTO::new).toList();
+        return ResponseEntity.ok(jobsWithCompany);
     }
 
     @DeleteMapping("/{id}")

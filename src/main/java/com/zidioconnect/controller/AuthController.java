@@ -44,7 +44,9 @@ public class AuthController {
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {
             AuthResponse response;
-            if ("RECRUITER".equalsIgnoreCase(request.getRole())) {
+            if ("ADMIN".equalsIgnoreCase(request.getRole())) {
+                response = userService.loginAdmin(request);
+            } else if ("RECRUITER".equalsIgnoreCase(request.getRole())) {
                 response = userService.loginRecruiter(request);
             } else {
                 response = userService.loginUser(request);
