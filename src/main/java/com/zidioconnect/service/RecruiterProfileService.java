@@ -37,6 +37,16 @@ public class RecruiterProfileService {
         profile.setLinkedinProfile(req.linkedinProfile);
         profile.setStinNumber(req.stinNumber);
         profile = profileRepo.save(profile);
+
+        // Sync company name and phone number to Recruiter entity for job posting
+        // validation
+        Recruiter recruiter = recruiterRepository.findByEmail(req.email).orElse(null);
+        if (recruiter != null) {
+            recruiter.setCompany(req.companyName);
+            recruiter.setPhoneNumber(req.phone); // Sync phone number
+            recruiterRepository.save(recruiter);
+        }
+
         return toResponse(profile);
     }
 

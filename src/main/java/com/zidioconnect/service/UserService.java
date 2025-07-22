@@ -8,9 +8,11 @@ import com.zidioconnect.dto.ResetPasswordRequest;
 import com.zidioconnect.model.Student;
 import com.zidioconnect.model.PasswordResetToken;
 import com.zidioconnect.model.Recruiter;
+import com.zidioconnect.model.Admin;
 import com.zidioconnect.repository.StudentRepository;
 import com.zidioconnect.repository.PasswordResetTokenRepository;
 import com.zidioconnect.repository.RecruiterRepository;
+import com.zidioconnect.repository.AdminRepository;
 import com.zidioconnect.security.JwtTokenProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +45,9 @@ public class UserService {
 
     @Autowired
     private RecruiterRepository recruiterRepository;
+
+    @Autowired
+    private AdminRepository adminRepository;
 
     @Transactional
     public AuthResponse registerUser(RegisterRequest request) {
@@ -130,6 +135,24 @@ public class UserService {
         } catch (Exception e) {
             logger.error("Error during recruiter login: ", e);
             throw new RuntimeException("Error during recruiter login: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public AuthResponse loginAdmin(LoginRequest request) {
+        try {
+            Admin admin = adminRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+            if (!passwordEncoder.matches(request.getPassword(), admin.getPassword())) {
+                throw new IllegalArgumentException("Invalid email or password");
+            }
+            admin.setUpdatedAt(LocalDateTime.now());
+            adminRepository.save(admin);
+            String token = tokenProvider.generateToken(admin.getEmail());
+            return new AuthResponse(token, "Login successful");
+        } catch (Exception e) {
+            logger.error("Error during admin login: ", e);
+            throw new RuntimeException("Error during admin login: " + e.getMessage(), e);
         }
     }
 
