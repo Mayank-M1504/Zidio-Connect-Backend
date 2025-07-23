@@ -90,10 +90,14 @@ public class ApplicationController {
         resp.studentProfileId = app.getStudentProfile().getId();
         resp.studentName = app.getStudentProfile().getFirstName() + " " + app.getStudentProfile().getLastName();
         resp.studentEmail = app.getStudentProfile().getEmail();
-        resp.phone = app.getStudentProfile().getPhone();
+        // resp.phone = app.getStudentProfile().getPhone(); // REMOVE phone
         resp.college = app.getStudentProfile().getCollege();
         resp.course = app.getStudentProfile().getCourse();
         resp.yearOfStudy = app.getStudentProfile().getYearOfStudy();
+        // Set skills as a List<String>
+        resp.skills = app.getStudentProfile().getSkills() != null ? app.getStudentProfile().getSkills().stream()
+                .map(s -> s.getSkill()).collect(java.util.stream.Collectors.toList())
+                : java.util.Collections.emptyList();
         if (app.getResume() != null) {
             resp.resume = toDocInfo(app.getResume());
         }

@@ -22,6 +22,8 @@ public class ApplicationResponse {
     public String questionForApplicant;
     public String answerForRecruiter;
 
+    public List<String> skills;
+
     public static class DocumentInfo {
         public Long id;
         public String name;
