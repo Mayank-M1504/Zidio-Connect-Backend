@@ -43,6 +43,24 @@ public class JwtTokenProvider {
         }
     }
 
+    public String generateTokenWithRole(String email, String role) {
+        try {
+            Date now = new Date();
+            Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+
+            return Jwts.builder()
+                    .setSubject(email)
+                    .claim("role", role)
+                    .setIssuedAt(new Date())
+                    .setExpiration(expiryDate)
+                    .signWith(key)
+                    .compact();
+        } catch (Exception e) {
+            logger.error("Error generating JWT token with role: ", e);
+            throw new RuntimeException("Error generating JWT token with role", e);
+        }
+    }
+
     public String getEmailFromJWT(String token) {
         try {
             Claims claims = Jwts.parserBuilder()

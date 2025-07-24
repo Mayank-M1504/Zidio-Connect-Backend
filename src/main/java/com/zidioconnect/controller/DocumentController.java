@@ -16,6 +16,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.zidioconnect.repository.RecruiterDocumentRepository;
+import com.zidioconnect.model.RecruiterDocument;
+import com.zidioconnect.dto.DocumentDTO;
 
 @RestController
 @RequestMapping("/api/documents")
@@ -24,6 +27,8 @@ public class DocumentController {
     private StudentProfileRepository profileRepository;
     @Autowired
     private StudentDocumentService documentService;
+    @Autowired
+    private RecruiterDocumentRepository recruiterDocumentRepository;
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadDocument(
@@ -277,13 +282,36 @@ public class DocumentController {
     @PatchMapping("/admin/document-status/{documentId}")
     public ResponseEntity<?> updateDocumentStatus(@PathVariable Long documentId,
             @RequestParam("status") String status) {
+        // Try student document first
         var docOpt = documentService.getAllDocuments().stream().filter(d -> d.getId().equals(documentId)).findFirst();
-        if (docOpt.isEmpty())
-            return ResponseEntity.notFound().build();
-        var doc = docOpt.get();
-        doc.setStatus(status);
-        documentService.saveDocument(doc);
-        return ResponseEntity.ok(Map.of("message", "Status updated", "document", doc));
+        if (docOpt.isPresent()) {
+            var doc = docOpt.get();
+            doc.setStatus(status);
+            documentService.saveDocument(doc);
+            DocumentDTO dto = new DocumentDTO();
+            dto.id = doc.getId();
+            dto.name = doc.getFileName();
+            dto.url = doc.getUrl();
+            dto.status = doc.getStatus();
+            dto.type = doc.getType();
+            return ResponseEntity.ok(Map.of("message", "Status updated", "document", dto));
+        }
+        // Try recruiter document
+        var recruiterDocOpt = recruiterDocumentRepository.findById(documentId);
+        if (recruiterDocOpt.isPresent()) {
+            RecruiterDocument recruiterDoc = recruiterDocOpt.get();
+            recruiterDoc.setStatus(status);
+            recruiterDocumentRepository.save(recruiterDoc);
+            DocumentDTO dto = new DocumentDTO();
+            dto.id = recruiterDoc.getId();
+            dto.name = recruiterDoc.getFileName();
+            dto.url = recruiterDoc.getUrl();
+            dto.status = recruiterDoc.getStatus();
+            dto.type = recruiterDoc.getType();
+            return ResponseEntity.ok(Map.of("message", "Status updated", "document", dto));
+        }
+        // Not found in either
+        return ResponseEntity.notFound().build();
     }
 
     // ADMIN: Update certificate status
