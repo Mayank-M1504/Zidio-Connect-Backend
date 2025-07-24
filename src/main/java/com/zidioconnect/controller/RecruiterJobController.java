@@ -123,4 +123,17 @@ public class RecruiterJobController {
         jobService.deleteJob(id);
         return ResponseEntity.ok().body("Job deleted successfully");
     }
+
+    // Add this endpoint for admin job approval/rejection
+    @PatchMapping("/admin/approve/{jobId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> approveOrRejectJob(@PathVariable Long jobId, @RequestParam("status") String status) {
+        RecruiterJob job = jobService.getJobById(jobId);
+        if (job == null) {
+            return ResponseEntity.notFound().build();
+        }
+        job.setAdminApprovalStatus(status);
+        jobService.saveJob(job);
+        return ResponseEntity.ok(java.util.Map.of("message", "Job status updated", "jobId", jobId, "status", status));
+    }
 }

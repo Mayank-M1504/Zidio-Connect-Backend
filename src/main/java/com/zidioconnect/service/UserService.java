@@ -148,7 +148,7 @@ public class UserService {
             }
             admin.setUpdatedAt(LocalDateTime.now());
             adminRepository.save(admin);
-            String token = tokenProvider.generateToken(admin.getEmail());
+            String token = tokenProvider.generateTokenWithRole(admin.getEmail(), "ADMIN");
             return new AuthResponse(token, "Login successful");
         } catch (Exception e) {
             logger.error("Error during admin login: ", e);

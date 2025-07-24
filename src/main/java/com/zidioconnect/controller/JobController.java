@@ -46,8 +46,13 @@ public class JobController {
     }
 
     @GetMapping
-    public ResponseEntity<List<JobWithCompanyDTO>> getApprovedJobsForStudents() {
-        List<RecruiterJob> jobs = jobService.getApprovedJobs();
+    public ResponseEntity<List<JobWithCompanyDTO>> getJobs(@RequestParam(value = "all", required = false) Boolean all) {
+        List<RecruiterJob> jobs;
+        if (all != null && all) {
+            jobs = jobService.getAllJobs();
+        } else {
+            jobs = jobService.getApprovedJobs();
+        }
         List<JobWithCompanyDTO> jobsWithCompany = jobs.stream().map(JobWithCompanyDTO::new).toList();
         return ResponseEntity.ok(jobsWithCompany);
     }
